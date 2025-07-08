@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coração das RNAs – Treinamento em Tempo Real</title>
+  <!-- TailwindCSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-sky-50 to-indigo-100 flex flex-col items-center p-6">
+  <!-- Cabeçalho -->
+  <header class="text-center mb-8">
+    <h1 class="text-3xl md:text-4xl font-extrabold text-indigo-800 drop-shadow-md flex items-center justify-center gap-2">
+      <span>🧠</span> O Coração das Redes Neurais
+    </h1>
+    <p class="text-indigo-600 text-lg mt-2">Simulação de Aprendizado com Atualização de Pesos em Tempo Real</p>
+  </header>
+
+  <!-- Grid principal -->
+  <main class="grid lg:grid-cols-3 gap-6 w-full max-w-7xl">
+    <!-- Painel de entrada -->
+    <section class="col-span-1 bg-white rounded-2xl shadow-xl p-6 space-y-4">
+      <h2 class="text-xl font-semibold text-indigo-700 mb-2">Parâmetros Iniciais</h2>
+
+      <!-- Vetor de entrada -->
+      <div>
+        <h3 class="font-medium text-indigo-600">Vetor de Entrada (x)</h3>
+        <div class="grid grid-cols-2 gap-2 mt-1">
+          <input id="x0" type="number" step="0.1" value="1.0" class="input-field" placeholder="x₁" />
+          <input id="x1" type="number" step="0.1" value="0.5" class="input-field" placeholder="x₂" />
+        </div>
+      </div>
+
+      <!-- Matriz de pesos -->
+      <div>
+        <h3 class="font-medium text-indigo-600">Matriz de Pesos Inicial (W)</h3>
+        <table class="w-full text-center border-separate border-spacing-2">
+          <tbody id="weight-table"></tbody>
+        </table>
+      </div>
+
+      <!-- Vetor de bias -->
+      <div>
+        <h3 class="font-medium text-indigo-600">Vetor de Bias Inicial (b)</h3>
+        <div class="grid grid-cols-3 gap-2 mt-1">
+          <input id="b0" type="number" step="0.01" value="0.10" class="input-field" placeholder="b₁" />
+          <input id="b1" type="number" step="0.01" value="-0.20" class="input-field" placeholder="b₂" />
+          <input id="b2" type="number" step="0.01" value="0.30" class="input-field" placeholder="b₃" />
+        </div>
+      </div>
+
+      <!-- Ativação -->
+      <div>
+        <h3 class="font-medium text-indigo-600">Função de Ativação (σ)</h3>
+        <select id="activation" class="input-field w-full">
+          <option value="relu" selected>ReLU</option>
+          <option value="sigmoid">Sigmoid</option>
+          <option value="tanh">Tanh</option>
+        </select>
+      </div>
+
+      <!-- Controles -->
+      <div class="flex gap-2 pt-2">
+        <button id="trainBtn" class="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow transition">Treinar ▶</button>
+        <button id="pauseBtn" class="flex-1 py-2 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded-xl shadow transition hidden">Pausar ❚❚</button>
+        <button id="resetBtn" class="flex-1 py-2 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-xl shadow transition">Reset ↻</button>
+      </div>
+    </section>
+
+    <!-- Painel de visualização -->
+    <section class="col-span-2 bg-white rounded-2xl shadow-xl p-6 space-y-8">
+      <!-- Métricas -->
+      <div class="grid md:grid-cols-4 gap-4 text-center">
+        <div class="bg-indigo-50 rounded-lg p-4">
+          <h3 class="text-sm text-gray-500">Época</h3>
+          <p id="epochDisplay" class="text-2xl font-bold text-indigo-700">0</p>
+        </div>
+        <div class="bg-indigo-50 rounded-lg p-4">
+          <h3 class="text-sm text-gray-500">Loss</h3>
+          <p id="lossDisplay" class="text-2xl font-bold text-red-600">—</p>
+        </div>
+        <div class="bg-indigo-50 rounded-lg p-4">
+          <h3 class="text-sm text-gray-500">Acurácia</h3>
+          <p id="accDisplay" class="text-2xl font-bold text-green-600">—</p>
+        </div>
+        <div class="bg-indigo-50 rounded-lg p-4">
+          <h3 class="text-sm text-gray-500">Parâmetros</h3>
+          <p id="paramCount" class="text-2xl font-bold text-green-600">—</p>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="grid md:grid-cols-3 gap-8">
+        <div>
+          <h3 class="text-center font-medium text-indigo-700 mb-2">Saída Neuronal (z e a)</h3>
+          <canvas id="resultChart" height="200"></canvas>
+        </div>
+        <div>
+          <h3 class="text-center font-medium text-indigo-700 mb-2">Curva de Loss</h3>
+          <canvas id="lossChart" height="200"></canvas>
+        </div>
+        <div>
+          <h3 class="text-center font-medium text-indigo-700 mb-2">Curva de Acurácia</h3>
+          <canvas id="accChart" height="200"></canvas>
+        </div>
+      </div>
+
+      <!-- Tabela numérica -->
+      <div>
+        <h3 class="text-center font-medium text-indigo-700 mb-2">Valores Numéricos</h3>
+        <table id="resultTable" class="w-full text-center border border-gray-200 rounded-lg"></table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="text-sm text-indigo-500 mt-8">Simulação didática de backprop simplificado 🤖</footer>
+
+  <!-- Script principal -->
+  <script>
+    /* ===== Estilo dos inputs ===== */
+    const inputStyle = 'rounded-lg border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 p-2 w-full shadow-sm';
+    document.querySelectorAll('.input-field').forEach(el => el.className = inputStyle);
+
+    /* ===== Inicialização ===== */
+    const weightTable = document.getElementById('weight-table');
+    const rows = 3, cols = 2;
+    let W = Array.from({ length: rows }, () => Array.from({ length: cols }, () => +(Math.random() * 1 - 0.5).toFixed(2)));
+    let b = [0.10, -0.20, 0.30];
+    let initialW = JSON.parse(JSON.stringify(W));
+    let initialb = [...b];
+    const lr = 0.1; // learning rate
+    let epoch = 0, intervalId = null;
+    const target = [1, 1, 1]; // vetor-alvo para a simulação
+
+    // EMA da acurácia
+    let accEMA = 0;
+    const alphaAcc = 0.1;
+
+    function renderWeightInputs() {
+      weightTable.innerHTML = '';
+      W.forEach((row, i) => {
+        const tr = document.createElement('tr');
+        row.forEach((val, j) => {
+          const td = document.createElement('td');
+          const inp = document.createElement('input');
+          inp.type = 'number';
+          inp.step = '0.01';
+          inp.value = val;
+          inp.id = `w${i}${j}`;
+          inp.className = inputStyle;
+          inp.addEventListener('input', () => {
+            W[i][j] = parseFloat(inp.value);
+          });
+          td.appendChild(inp);
+          tr.appendChild(td);
+        });
+        weightTable.appendChild(tr);
+      });
+    }
+    renderWeightInputs();
+
+    /* ===== Ativações ===== */
+    const activations = {
+      relu: z => z.map(v => Math.max(0, v)),
+      sigmoid: z => z.map(v => 1 / (1 + Math.exp(-v))),
+      tanh: z => z.map(v => Math.tanh(v))
+    };
+
+    function multiplyMatrixVector(mat, vec) {
+      return mat.map(row => row.reduce((s, w, j) => s + w * vec[j], 0));
+    }
+
+    function forward(x) {
+      const z = multiplyMatrixVector(W, x).map((v,i) => v + b[i]);
+      const a = activations[document.getElementById('activation').value](z);
+      return { z, a };
+    }
+
+    /* ===== Chart.js setup ===== */
+    const resultChart = new Chart(document.getElementById('resultChart'), {
+      type: 'bar', data: { labels: ['n1','n2','n3'], datasets: [{ label: 'z', data: [0,0,0]},{ label: 'a', data: [0,0,0]}] }, options: { responsive: true }
+    });
+    const lossChart = new Chart(document.getElementById('lossChart'), {
+      type: 'line', data: { labels:[], datasets:[{ label:'Loss', data:[] }] }, options: { responsive: true }
+    });
+    const accChart = new Chart(document.getElementById('accChart'), {
+      type: 'line', data: { labels:[], datasets:[{ label:'Acurácia EMA', data:[] }] }, options: { responsive: true }
+    });
+
+    /* ===== UI Updates ===== */
+    function updateMetrics(loss, acc) {
+      document.getElementById('epochDisplay').innerText = epoch;
+      document.getElementById('lossDisplay').innerText = loss.toFixed(4);
+      document.getElementById('accDisplay').innerText = (acc*100).toFixed(1)+'%';
+      document.getElementById('paramCount').innerText = rows*cols+rows;
+    }
+    function updateCharts(loss, acc, z, a) {
+      lossChart.data.labels.push(epoch); lossChart.data.datasets[0].data.push(loss); lossChart.update();
+      accChart.data.labels.push(epoch); accChart.data.datasets[0].data.push(accEMA); accChart.update();
+      resultChart.data.datasets[0].data = z; resultChart.data.datasets[1].data = a; resultChart.update();
+    }
+    function updateTable(z,a) {
+      document.getElementById('resultTable').innerHTML =
+        `<tr><th>Métrica</th><th>n1</th><th>n2</th><th>n3</th></tr>`+
+        `<tr><td>z</td><td>${z.map(v=>v.toFixed(2)).join('</td><td>')}</td></tr>`+
+        `<tr><td>a</td><td>${a.map(v=>v.toFixed(2)).join('</td><td>')}</td></tr>`;
+    }
+
+    /* ===== Passo de treinamento ===== */
+    function trainStep() {
+      const x=[parseFloat(document.getElementById('x0').value),parseFloat(document.getElementById('x1').value)];
+      const {z,a}=forward(x);
+      const err=a.map((ai,i)=>ai-target[i]);
+      const loss=err.reduce((s,e)=>s+e*e,0)/err.length;
+      const tol=0.05; const acc=err.filter(e=>Math.abs(e)<tol).length/err.length;
+      accEMA=alphaAcc*acc+(1-alphaAcc)*accEMA;
+      for(let i=0;i<rows;i++){for(let j=0;j<cols;j++){W[i][j]-=lr*err[i]*x[j]; document.getElementById(`w${i}${j}`).value=W[i][j].toFixed(2);} b[i]-=lr*err[i]; document.getElementById(`b${i}`).value=b[i].toFixed(2);} epoch++;
+      updateMetrics(loss,accEMA); updateCharts(loss,accEMA,z,a); updateTable(z,a);
+    }
+
+    /* ===== Controles ===== */
+    document.getElementById('trainBtn').onclick=()=>{document.getElementById('trainBtn').classList.add('hidden'); document.getElementById('pauseBtn').classList.remove('hidden'); if(!intervalId) intervalId=setInterval(trainStep,500);};
+    document.getElementById('pauseBtn').onclick=()=>{document.getElementById('pauseBtn').classList.add('hidden'); document.getElementById('trainBtn').classList.remove('hidden'); clearInterval(intervalId); intervalId=null;};
+    document.getElementById('resetBtn').onclick=()=>{clearInterval(intervalId); intervalId=null; epoch=0; W=JSON.parse(JSON.stringify(initialW)); b=[...initialb]; renderWeightInputs(); document.getElementById('b0').value=b[0].toFixed(2); document.getElementById('b1').value=b[1].toFixed(2); document.getElementById('b2').value=b[2].toFixed(2); lossChart.data.labels=[]; lossChart.data.datasets[0].data=[]; lossChart.update(); accChart.data.labels=[]; accChart.data.datasets[0].data=[]; accChart.update(); resultChart.data.datasets[0].data=[0,0,0]; resultChart.data.datasets[1].data=[0,0,0]; resultChart.update(); updateMetrics(0,0); updateTable([0,0,0],[0,0,0]); document.getElementById('pauseBtn').classList.add('hidden'); document.getElementById('trainBtn').classList.remove('hidden');};
+  </script>
+</body>
+</html>
